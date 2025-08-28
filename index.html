@@ -82,10 +82,35 @@ function buildData() {
     .split("\n")
     .map(n => n.trim())
     .filter(n => n);
-  if (names.length === 0) {
-    alert("Please enter at least one name.");
+  
+  if (names.length < 3) {
+    alert("Please enter at least 3 names.");
     return [];
   }
+
+  let difficulty = document.getElementById("difficulty").value;
+  let randomWords = getRandomWords(names.length, difficulty);
+
+  // Shuffle names ensuring no adjacent repeats
+  let shuffled = [];
+  let tries = 0;
+  const maxTries = 1000; // prevent infinite loop
+  do {
+    shuffled = [...names].sort(() => Math.random() - 0.5);
+    tries++;
+    if (tries > maxTries) break;
+  } while (shuffled.some((name, i) => name === (i === 0 ? shuffled[shuffled.length - 1] : shuffled[i - 1])));
+
+  let data = [];
+  for (let i = 0; i < shuffled.length; i++) {
+    let prev = i === 0 ? shuffled[shuffled.length - 1] : shuffled[i - 1];
+    data.push([prev, shuffled[i], randomWords[i]]);
+  }
+
+  return data;
+}
+
+
 
   names.sort(() => Math.random() - 0.5); // shuffle
 
