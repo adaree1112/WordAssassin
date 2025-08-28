@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Name + Random Word Generator</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    textarea { width: 100%; height: 120px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 15px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+    th { background: #4CAF50; color: white; }
+    td[contenteditable="true"] { background: #f9f9f9; }
+    button { margin: 5px; padding: 8px 12px; cursor: pointer; }
+    .controls { margin: 10px 0; }
+  </style>
+</head>
+<body>
+
+  <h2>Name + Random Word Generator</h2>
+
+  <label>Enter names (one per line):</label><br>
+  <textarea id="names"></textarea><br><br>
+
+  <label>Select difficulty: </label>
+  <select id="difficulty"></select>
+
+  <div class="controls">
+    <button onclick="generatePreview()">Generate Preview</button>
+    <button onclick="downloadCSV()">Download CSV</button>
+    <button onclick="downloadPDF()">Download PDF</button>
+  </div>
+
+  <h3>Preview (double-click Random Word to edit):</h3>
+  <table id="previewTable">
+    <thead>
+      <tr>
+        <th>Previous Name</th>
+        <th>Name</th>
+        <th>Random Word</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    let words = {};
+    let previewData = [];
+
+    // Load words.json
+    fetch("words.json")
+      .then(res => res.json())
+      .then(data => {
+        words = data;
+        let diffSelect = document.getElementById("difficulty");
+        Object.keys(words).forEach(level => {
+          let opt = document.createElement("option");
+          opt.value = level;
+          opt.textContent = level;
+          diffSelect.appendChild(opt);
+        });
+      });
+
+    function getRandomWords(count, difficulty) {
+      let pool = [...words[difficulty]];
+      if (count > pool.length) {
+        alert("Not enough words in " + difficulty + " list.");
+        return [];
+      }
+      let selected = [];
+      while (selected.length < count) {
+        let idx = Math.floor(Math.random() * pool.length);
+        selected.push(pool.splice(idx, 1)[0]);
+      }
+      return selected;
+    }
+
+    function generatePreview() {
+      let names = document.getElementById("names").value
+        .split("\n")
+        .map(n => n.trim())
+        .filter(n => n);
+      if (names.length === 0) {
+        alert("Please enter at least one name.");
+        return;
+      }
+
+      names.sort(() => Math.random() - 0.5); // shuffle
+
+      let difficulty = document.getElementById("difficulty").value;
+      let randomWords = getRandomWords(names.length, difficulty);
+
+      previewData = [];
+      for (let i = 0; i < names.length; i++) {
+        let prev = i === 0 ? names[names.length - 1] : names[i - 1];
+        previewData.push([prev, names[i], randomWords[i]]);
+      }
+
+      renderTable();
+    }
+
+    function renderTable() {
+      let tbody = document.querySelector("#previewTable tbody");
+      tbody.innerHTML = "";
+      previewData.forEach((row, i) => {
+        let tr = document.createElement("tr");
+        row.forEach((cell, j) => {
+          let td = document.createElement("td");
+          td.textContent = cell;
+          if (j === 2) {
+            td.contentEditable = "true";
+            td.addEventListener("input", () => {
+              previewData[i][2] = td.textContent;
+            });
+          }
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+    }
+
+    function downloadCSV() {
+      if (previewData.length === 0) {
+        alert("Generate preview first.");
+        return;
+      }
+      let csv = "Previous Name,Name,Random Word\n" +
+        previewData.map(r => r.join(",")).join("\n");
+      let blob = new Blob([csv], { type: "text/csv" });
+      let a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "output.csv";
+      a.click();
+    }
+
+    function downloadPDF() {
+      if (previewData.length === 0) {
+        alert("Generate preview first.");
+        return;
+      }
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ unit: "pt", format: "a4" });
+
+      let startY = 40;
+      doc.setFontSize(12);
+      doc.text("Previous Name      Name      Random Word", 40, startY);
+
+      previewData.forEach((row, i) => {
+        doc.text(row.join("      "), 40, startY + 20 + i * 20);
+      });
+
+      doc.save("output.pdf");
+    }
+  </script>
+</body>
+</html>
