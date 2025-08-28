@@ -144,14 +144,11 @@ function downloadPDF() {
 
 function printPDF() {
   const doc = generatePDF();
-  doc.autoPrint();
-  const blobURL = doc.output('bloburl');
-  const iframe = document.createElement('iframe');
-  iframe.style.display = 'none';
-  iframe.src = blobURL;
-  document.body.appendChild(iframe);
-  iframe.contentWindow.focus();
-  iframe.contentWindow.print();
+  doc.autoPrint(); // instruct PDF to open in print mode
+  const blobURL = doc.output('bloburl'); // create a URL for PDF in memory
+  const printWindow = window.open(blobURL); // open PDF in new window
+  printWindow.focus(); // focus the window
+  // The PDF itself triggers the print dialog via autoPrint
 }
 
 function generatePDF() {
