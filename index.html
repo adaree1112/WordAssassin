@@ -1,20 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Name + Random Word Generator</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    textarea { width: 100%; height: 120px; }
-    table { border-collapse: collapse; width: 100%; margin-top: 15px; }
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-    th { background: #4CAF50; color: white; }
-    td[contenteditable="true"] { background: #f9f9f9; }
-    button { margin: 5px; padding: 8px 12px; cursor: pointer; }
-    .controls { margin: 10px 0; }
-  </style>
+<meta charset="UTF-8">
+<title>Name + Random Word Generator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; }
+  textarea { width: 100%; height: 120px; }
+  table { border-collapse: collapse; width: 100%; margin-top: 15px; }
+  th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+  th { background: #4CAF50; color: white; }
+  td[contenteditable="true"] { background: #f9f9f9; }
+  button { margin: 5px; padding: 8px 12px; cursor: pointer; }
+  .controls { margin: 10px 0; }
+</style>
 </head>
 <body>
 
@@ -144,33 +144,37 @@ function downloadPDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: "pt", format: "a4" });
 
-  let pageWidth = doc.internal.pageSize.getWidth();
-  let colWidth = pageWidth / 3;
+  const margin = 40; // equal page margins
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const usableWidth = pageWidth - margin * 2;
+  const colWidth = usableWidth / 3;
 
   doc.autoTable({
     head: [["Previous Name", "Name", "Random Word"]],
     body: data,
-    startY: 40,
+    startY: margin,
     theme: "grid",
     styles: {
       halign: "center",
       valign: "middle",
       fontSize: 10,
       cellPadding: 4,
-      overflow: 'linebreak' // wrap text
+      overflow: 'linebreak', // wrap text
+      minCellHeight: 0 // allow dynamic height
     },
     columnStyles: {
       0: { cellWidth: colWidth },
       1: { cellWidth: colWidth },
       2: { cellWidth: colWidth }
     },
-    headStyles: { fillColor: [128, 128, 128], textColor: 255, fontStyle: "bold" },
+    headStyles: { fillColor: [128,128,128], textColor: 255, fontStyle: "bold" },
     tableLineWidth: 0.5,
-    tableLineColor: [0, 0, 0],
+    tableLineColor: [0,0,0],
     didDrawCell: (dataCell) => {
-      // Remove vertical lines, keep horizontal
+      // Remove vertical lines
       dataCell.cell.styles.lineWidth = { top: 0.5, bottom: 0.5, left: 0, right: 0 };
-    }
+    },
+    margin: { left: margin, right: margin }
   });
 
   doc.save("output.pdf");
