@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Name + Random Word Generator</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
     textarea { width: 100%; height: 120px; }
@@ -141,12 +142,27 @@
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ unit: "pt", format: "a4" });
 
-      let startY = 40;
-      doc.setFontSize(12);
-      doc.text("Previous Name      Name      Random Word", 40, startY);
-
-      previewData.forEach((row, i) => {
-        doc.text(row.join("      "), 40, startY + 20 + i * 20);
+      doc.autoTable({
+        head: [["Previous Name", "Name", "Random Word"]],
+        body: previewData,
+        startY: 40,
+        styles: { halign: "center", valign: "middle", fontSize: 10 },
+        columnStyles: {
+          0: { cellWidth: doc.internal.pageSize.getWidth() / 3 - 10 },
+          1: { cellWidth: doc.internal.pageSize.getWidth() / 3 - 10 },
+          2: { cellWidth: doc.internal.pageSize.getWidth() / 3 - 10 }
+        },
+        headStyles: { fillColor: [128, 128, 128], textColor: 255, fontStyle: "bold" },
+        theme: "grid",
+        tableLineWidth: 0.5,
+        tableLineColor: [0, 0, 0],
+        styles: { lineWidth: 0.5, lineColor: [0, 0, 0] },
+        didDrawCell: (data) => {
+          // Remove vertical gridlines: draw only horizontal lines
+          if (data.section === "body" || data.section === "head") {
+            data.cell.styles.lineWidth = { left: 0, right: 0, top: 0.5, bottom: 0.5 };
+          }
+        }
       });
 
       doc.save("output.pdf");
