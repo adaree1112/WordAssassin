@@ -8,8 +8,8 @@
 <style>
   body { font-family: Arial, sans-serif; margin: 20px; }
   textarea { width: 100%; height: 120px; }
-  table { border-collapse: collapse; width: 100%; margin-top: 15px; }
-  th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+  table { border-collapse: collapse; width: 100%; margin-top: 15px; table-layout: fixed; }
+  th, td { border: 1px solid #ddd; padding: 8px; text-align: center; width: 33.33%; word-wrap: break-word; }
   th { background: #4CAF50; color: white; }
   td[contenteditable="true"] { background: #f9f9f9; }
   button { margin: 5px; padding: 8px 12px; cursor: pointer; }
@@ -100,7 +100,6 @@ function buildData() {
     return [];
   }
 
-  // Check for duplicate names
   let nameSet = new Set(names);
   if (nameSet.size !== names.length) {
     alert("Duplicate names detected. Please ensure all names are unique.");
