@@ -143,8 +143,15 @@ function downloadPDF() {
 }
 
 function printPDF() {
-  generatePDF().autoPrint({ variant: 'non-conform' });
-  window.open(generatePDF().output('bloburl'), '_blank');
+  const doc = generatePDF();
+  doc.autoPrint();
+  const blobURL = doc.output('bloburl');
+  const iframe = document.createElement('iframe');
+  iframe.style.display = 'none';
+  iframe.src = blobURL;
+  document.body.appendChild(iframe);
+  iframe.contentWindow.focus();
+  iframe.contentWindow.print();
 }
 
 function generatePDF() {
