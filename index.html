@@ -30,6 +30,7 @@
   <button onclick="generatePreview()">Generate Preview</button>
   <button onclick="downloadCSV()">Download CSV</button>
   <button onclick="downloadPDF()">Download PDF</button>
+  <button onclick="printPDF()">Print PDF</button>
 </div>
 
 <h3>Preview (double-click Random Word to edit):</h3>
@@ -138,6 +139,15 @@ function downloadCSV() {
 }
 
 function downloadPDF() {
+  generatePDF().save("output.pdf");
+}
+
+function printPDF() {
+  generatePDF().autoPrint({ variant: 'non-conform' });
+  window.open(generatePDF().output('bloburl'), '_blank');
+}
+
+function generatePDF() {
   let data = previewData.length ? previewData : buildData();
   if (!data.length) return;
 
@@ -154,7 +164,7 @@ function downloadPDF() {
     body: data,
     startY: margin,
     theme: "grid",
-    tableWidth: usableWidth, // constrain table width to margin
+    tableWidth: usableWidth,
     styles: {
       halign: "center",
       valign: "middle",
@@ -172,13 +182,12 @@ function downloadPDF() {
     tableLineWidth: 0.5,
     tableLineColor: [0,0,0],
     didDrawCell: (dataCell) => {
-      // Remove vertical lines
       dataCell.cell.styles.lineWidth = { top: 0.5, bottom: 0.5, left: 0, right: 0 };
     },
     margin: { left: margin, right: margin }
   });
 
-  doc.save("output.pdf");
+  return doc;
 }
 </script>
 </body>
