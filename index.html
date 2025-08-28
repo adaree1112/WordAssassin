@@ -76,14 +76,14 @@ function getRandomWords(count, difficulty) {
   return selected;
 }
 
-function generatePreview() {
+function buildData() {
   let names = document.getElementById("names").value
     .split("\n")
     .map(n => n.trim())
     .filter(n => n);
   if (names.length === 0) {
     alert("Please enter at least one name.");
-    return;
+    return [];
   }
 
   names.sort(() => Math.random() - 0.5); // shuffle
@@ -91,12 +91,16 @@ function generatePreview() {
   let difficulty = document.getElementById("difficulty").value;
   let randomWords = getRandomWords(names.length, difficulty);
 
-  previewData = [];
+  let data = [];
   for (let i = 0; i < names.length; i++) {
     let prev = i === 0 ? names[names.length - 1] : names[i - 1];
-    previewData.push([prev, names[i], randomWords[i]]);
+    data.push([prev, names[i], randomWords[i]]);
   }
+  return data;
+}
 
+function generatePreview() {
+  previewData = buildData();
   renderTable();
 }
 
@@ -121,12 +125,11 @@ function renderTable() {
 }
 
 function downloadCSV() {
-  if (previewData.length === 0) {
-    alert("Generate preview first.");
-    return;
-  }
+  let data = previewData.length ? previewData : buildData();
+  if (!data.length) return;
+
   let csv = "Previous Name,Name,Random Word\n" +
-    previewData.map(r => r.join(",")).join("\n");
+    data.map(r => r.join(",")).join("\n");
   let blob = new Blob([csv], { type: "text/csv" });
   let a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
@@ -135,10 +138,8 @@ function downloadCSV() {
 }
 
 function downloadPDF() {
-  if (previewData.length === 0) {
-    alert("Generate preview first.");
-    return;
-  }
+  let data = previewData.length ? previewData : buildData();
+  if (!data.length) return;
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: "pt", format: "a4" });
@@ -148,14 +149,15 @@ function downloadPDF() {
 
   doc.autoTable({
     head: [["Previous Name", "Name", "Random Word"]],
-    body: previewData,
+    body: data,
     startY: 40,
     theme: "grid",
     styles: {
       halign: "center",
       valign: "middle",
       fontSize: 10,
-      cellPadding: 4
+      cellPadding: 4,
+      overflow: 'linebreak' // wrap text
     },
     columnStyles: {
       0: { cellWidth: colWidth },
@@ -163,15 +165,11 @@ function downloadPDF() {
       2: { cellWidth: colWidth }
     },
     headStyles: { fillColor: [128, 128, 128], textColor: 255, fontStyle: "bold" },
-    didDrawCell: (data) => {
-      // Remove vertical gridlines, keep horizontal lines
-      data.cell.styles.lineWidth = { top: 0.5, bottom: 0.5, left: 0, right: 0 };
-    },
-    // Repeat header on every page
-    didDrawPage: (data) => {
-      if (data.pageNumber > 1) {
-        // header repeats automatically with autoTable, no extra code needed
-      }
+    tableLineWidth: 0.5,
+    tableLineColor: [0, 0, 0],
+    didDrawCell: (dataCell) => {
+      // Remove vertical lines, keep horizontal
+      dataCell.cell.styles.lineWidth = { top: 0.5, bottom: 0.5, left: 0, right: 0 };
     }
   });
 
