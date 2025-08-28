@@ -20,7 +20,7 @@
 
 <h2>Word Assassin Generator</h2>
 
-<label>Enter names (one per line, minimum 3):</label><br>
+<label>Enter names (one per line, minimum 3, no duplicates):</label><br>
 <textarea id="names"></textarea><br><br>
 
 <label>Select difficulty: </label>
@@ -72,18 +72,20 @@ function getRandomWords(count, difficulty) {
   let selected = [];
   while (selected.length < count) {
     let idx = Math.floor(Math.random() * pool.length);
-    selected.push(pool.splice(idx, 1)[0]);
+    selected.push(pool.splice(idx, 1)[0]); // remove to ensure uniqueness
   }
   return selected;
 }
 
 function shuffleNoSelf(names) {
-  // Shuffle names until no name is next to itself in the circle
-  let shuffled;
   const n = names.length;
+  let shuffled;
+  let attempts = 0;
   do {
     shuffled = [...names].sort(() => Math.random() - 0.5);
-  } while (n > 1 && shuffled.some((name, i) => name === shuffled[(i-1+n)%n]));
+    attempts++;
+    if (attempts > 1000) break; // prevent infinite loop
+  } while (shuffled.some((name, i) => name === shuffled[(i-1+n)%n]));
   return shuffled;
 }
 
@@ -98,7 +100,13 @@ function buildData() {
     return [];
   }
 
-  // Shuffle so no name is next to itself
+  // Check for duplicate names
+  let nameSet = new Set(names);
+  if (nameSet.size !== names.length) {
+    alert("Duplicate names detected. Please ensure all names are unique.");
+    return [];
+  }
+
   names = shuffleNoSelf(names);
 
   let difficulty = document.getElementById("difficulty").value;
