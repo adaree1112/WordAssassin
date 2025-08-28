@@ -154,13 +154,14 @@ function downloadPDF() {
     body: data,
     startY: margin,
     theme: "grid",
+    tableWidth: usableWidth, // constrain table width to margin
     styles: {
       halign: "center",
       valign: "middle",
       fontSize: 10,
       cellPadding: 4,
-      overflow: 'linebreak', // wrap text
-      minCellHeight: 0 // allow dynamic height
+      overflow: 'linebreak',
+      minCellHeight: 0
     },
     columnStyles: {
       0: { cellWidth: colWidth },
