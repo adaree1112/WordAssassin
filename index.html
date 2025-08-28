@@ -18,155 +18,165 @@
 </head>
 <body>
 
-  <h2>Name + Random Word Generator</h2>
+<h2>Name + Random Word Generator</h2>
 
-  <label>Enter names (one per line):</label><br>
-  <textarea id="names"></textarea><br><br>
+<label>Enter names (one per line):</label><br>
+<textarea id="names"></textarea><br><br>
 
-  <label>Select difficulty: </label>
-  <select id="difficulty"></select>
+<label>Select difficulty: </label>
+<select id="difficulty"></select>
 
-  <div class="controls">
-    <button onclick="generatePreview()">Generate Preview</button>
-    <button onclick="downloadCSV()">Download CSV</button>
-    <button onclick="downloadPDF()">Download PDF</button>
-  </div>
+<div class="controls">
+  <button onclick="generatePreview()">Generate Preview</button>
+  <button onclick="downloadCSV()">Download CSV</button>
+  <button onclick="downloadPDF()">Download PDF</button>
+</div>
 
-  <h3>Preview (double-click Random Word to edit):</h3>
-  <table id="previewTable">
-    <thead>
-      <tr>
-        <th>Previous Name</th>
-        <th>Name</th>
-        <th>Random Word</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+<h3>Preview (double-click Random Word to edit):</h3>
+<table id="previewTable">
+  <thead>
+    <tr>
+      <th>Previous Name</th>
+      <th>Name</th>
+      <th>Random Word</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
 
-  <script>
-    let words = {};
-    let previewData = [];
+<script>
+let words = {};
+let previewData = [];
 
-    // Load words.json
-    fetch("words.json")
-      .then(res => res.json())
-      .then(data => {
-        words = data;
-        let diffSelect = document.getElementById("difficulty");
-        Object.keys(words).forEach(level => {
-          let opt = document.createElement("option");
-          opt.value = level;
-          opt.textContent = level;
-          diffSelect.appendChild(opt);
+// Load words.json
+fetch("words.json")
+  .then(res => res.json())
+  .then(data => {
+    words = data;
+    let diffSelect = document.getElementById("difficulty");
+    Object.keys(words).forEach(level => {
+      let opt = document.createElement("option");
+      opt.value = level;
+      opt.textContent = level;
+      diffSelect.appendChild(opt);
+    });
+  });
+
+function getRandomWords(count, difficulty) {
+  let pool = [...words[difficulty]];
+  if (count > pool.length) {
+    alert("Not enough words in " + difficulty + " list.");
+    return [];
+  }
+  let selected = [];
+  while (selected.length < count) {
+    let idx = Math.floor(Math.random() * pool.length);
+    selected.push(pool.splice(idx, 1)[0]);
+  }
+  return selected;
+}
+
+function generatePreview() {
+  let names = document.getElementById("names").value
+    .split("\n")
+    .map(n => n.trim())
+    .filter(n => n);
+  if (names.length === 0) {
+    alert("Please enter at least one name.");
+    return;
+  }
+
+  names.sort(() => Math.random() - 0.5); // shuffle
+
+  let difficulty = document.getElementById("difficulty").value;
+  let randomWords = getRandomWords(names.length, difficulty);
+
+  previewData = [];
+  for (let i = 0; i < names.length; i++) {
+    let prev = i === 0 ? names[names.length - 1] : names[i - 1];
+    previewData.push([prev, names[i], randomWords[i]]);
+  }
+
+  renderTable();
+}
+
+function renderTable() {
+  let tbody = document.querySelector("#previewTable tbody");
+  tbody.innerHTML = "";
+  previewData.forEach((row, i) => {
+    let tr = document.createElement("tr");
+    row.forEach((cell, j) => {
+      let td = document.createElement("td");
+      td.textContent = cell;
+      if (j === 2) {
+        td.contentEditable = "true";
+        td.addEventListener("input", () => {
+          previewData[i][2] = td.textContent;
         });
-      });
+      }
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+}
 
-    function getRandomWords(count, difficulty) {
-      let pool = [...words[difficulty]];
-      if (count > pool.length) {
-        alert("Not enough words in " + difficulty + " list.");
-        return [];
+function downloadCSV() {
+  if (previewData.length === 0) {
+    alert("Generate preview first.");
+    return;
+  }
+  let csv = "Previous Name,Name,Random Word\n" +
+    previewData.map(r => r.join(",")).join("\n");
+  let blob = new Blob([csv], { type: "text/csv" });
+  let a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "output.csv";
+  a.click();
+}
+
+function downloadPDF() {
+  if (previewData.length === 0) {
+    alert("Generate preview first.");
+    return;
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: "pt", format: "a4" });
+
+  let pageWidth = doc.internal.pageSize.getWidth();
+  let colWidth = pageWidth / 3;
+
+  doc.autoTable({
+    head: [["Previous Name", "Name", "Random Word"]],
+    body: previewData,
+    startY: 40,
+    theme: "grid",
+    styles: {
+      halign: "center",
+      valign: "middle",
+      fontSize: 10,
+      cellPadding: 4
+    },
+    columnStyles: {
+      0: { cellWidth: colWidth },
+      1: { cellWidth: colWidth },
+      2: { cellWidth: colWidth }
+    },
+    headStyles: { fillColor: [128, 128, 128], textColor: 255, fontStyle: "bold" },
+    didDrawCell: (data) => {
+      // Remove vertical gridlines, keep horizontal lines
+      data.cell.styles.lineWidth = { top: 0.5, bottom: 0.5, left: 0, right: 0 };
+    },
+    // Repeat header on every page
+    didDrawPage: (data) => {
+      if (data.pageNumber > 1) {
+        // header repeats automatically with autoTable, no extra code needed
       }
-      let selected = [];
-      while (selected.length < count) {
-        let idx = Math.floor(Math.random() * pool.length);
-        selected.push(pool.splice(idx, 1)[0]);
-      }
-      return selected;
     }
+  });
 
-    function generatePreview() {
-      let names = document.getElementById("names").value
-        .split("\n")
-        .map(n => n.trim())
-        .filter(n => n);
-      if (names.length === 0) {
-        alert("Please enter at least one name.");
-        return;
-      }
-
-      names.sort(() => Math.random() - 0.5); // shuffle
-
-      let difficulty = document.getElementById("difficulty").value;
-      let randomWords = getRandomWords(names.length, difficulty);
-
-      previewData = [];
-      for (let i = 0; i < names.length; i++) {
-        let prev = i === 0 ? names[names.length - 1] : names[i - 1];
-        previewData.push([prev, names[i], randomWords[i]]);
-      }
-
-      renderTable();
-    }
-
-    function renderTable() {
-      let tbody = document.querySelector("#previewTable tbody");
-      tbody.innerHTML = "";
-      previewData.forEach((row, i) => {
-        let tr = document.createElement("tr");
-        row.forEach((cell, j) => {
-          let td = document.createElement("td");
-          td.textContent = cell;
-          if (j === 2) {
-            td.contentEditable = "true";
-            td.addEventListener("input", () => {
-              previewData[i][2] = td.textContent;
-            });
-          }
-          tr.appendChild(td);
-        });
-        tbody.appendChild(tr);
-      });
-    }
-
-    function downloadCSV() {
-      if (previewData.length === 0) {
-        alert("Generate preview first.");
-        return;
-      }
-      let csv = "Previous Name,Name,Random Word\n" +
-        previewData.map(r => r.join(",")).join("\n");
-      let blob = new Blob([csv], { type: "text/csv" });
-      let a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "output.csv";
-      a.click();
-    }
-
-    function downloadPDF() {
-      if (previewData.length === 0) {
-        alert("Generate preview first.");
-        return;
-      }
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({ unit: "pt", format: "a4" });
-
-      doc.autoTable({
-        head: [["Previous Name", "Name", "Random Word"]],
-        body: previewData,
-        startY: 40,
-        styles: { halign: "center", valign: "middle", fontSize: 10 },
-        columnStyles: {
-          0: { cellWidth: doc.internal.pageSize.getWidth() / 3 - 10 },
-          1: { cellWidth: doc.internal.pageSize.getWidth() / 3 - 10 },
-          2: { cellWidth: doc.internal.pageSize.getWidth() / 3 - 10 }
-        },
-        headStyles: { fillColor: [128, 128, 128], textColor: 255, fontStyle: "bold" },
-        theme: "grid",
-        tableLineWidth: 0.5,
-        tableLineColor: [0, 0, 0],
-        styles: { lineWidth: 0.5, lineColor: [0, 0, 0] },
-        didDrawCell: (data) => {
-          // Remove vertical gridlines: draw only horizontal lines
-          if (data.section === "body" || data.section === "head") {
-            data.cell.styles.lineWidth = { left: 0, right: 0, top: 0.5, bottom: 0.5 };
-          }
-        }
-      });
-
-      doc.save("output.pdf");
-    }
-  </script>
+  doc.save("output.pdf");
+}
+</script>
 </body>
 </html>
