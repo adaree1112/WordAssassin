@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -21,7 +20,7 @@
 
 <h2>Word Assassin Generator</h2>
 
-<label>Enter names (one per line):</label><br>
+<label>Enter names (one per line, minimum 3):</label><br>
 <textarea id="names"></textarea><br><br>
 
 <label>Select difficulty: </label>
@@ -78,17 +77,29 @@ function getRandomWords(count, difficulty) {
   return selected;
 }
 
+function shuffleNoSelf(names) {
+  // Shuffle names until no name is next to itself in the circle
+  let shuffled;
+  const n = names.length;
+  do {
+    shuffled = [...names].sort(() => Math.random() - 0.5);
+  } while (n > 1 && shuffled.some((name, i) => name === shuffled[(i-1+n)%n]));
+  return shuffled;
+}
+
 function buildData() {
   let names = document.getElementById("names").value
     .split("\n")
     .map(n => n.trim())
     .filter(n => n);
-  if (names.length === 0) {
-    alert("Please enter at least one name.");
+
+  if (names.length < 3) {
+    alert("Please enter at least 3 names.");
     return [];
   }
 
-  names.sort(() => Math.random() - 0.5); // shuffle
+  // Shuffle so no name is next to itself
+  names = shuffleNoSelf(names);
 
   let difficulty = document.getElementById("difficulty").value;
   let randomWords = getRandomWords(names.length, difficulty);
@@ -145,11 +156,10 @@ function downloadPDF() {
 
 function printPDF() {
   const doc = generatePDF();
-  doc.autoPrint(); // instruct PDF to open in print mode
-  const blobURL = doc.output('bloburl'); // create a URL for PDF in memory
-  const printWindow = window.open(blobURL); // open PDF in new window
-  printWindow.focus(); // focus the window
-  // The PDF itself triggers the print dialog via autoPrint
+  doc.autoPrint(); 
+  const blobURL = doc.output('bloburl'); 
+  const printWindow = window.open(blobURL); 
+  printWindow.focus(); 
 }
 
 function generatePDF() {
@@ -159,7 +169,7 @@ function generatePDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: "pt", format: "a4" });
 
-  const margin = 40; // equal page margins
+  const margin = 40; 
   const pageWidth = doc.internal.pageSize.getWidth();
   const usableWidth = pageWidth - margin * 2;
   const colWidth = usableWidth / 3;
