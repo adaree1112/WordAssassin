@@ -37,13 +37,13 @@
   <button onclick="printPDF()">Print</button>
 </div>
 
-<h3>Preview (double-click Random Word to edit):</h3>
+<h3>Preview (double-click Word to edit):</h3>
 <table id="previewTable">
   <thead>
     <tr>
       <th>Task for</th>
       <th>Name</th>
-      <th class="wordCol">Random Word</th>
+      <th class="wordCol">Word</th>
     </tr>
   </thead>
   <tbody></tbody>
@@ -170,7 +170,7 @@ function downloadCSV() {
   if (!data.length) return;
 
   let noWords = document.getElementById("noWords").checked;
-  let headers = noWords ? ["Task for","Name"] : ["Task for","Name","Random Word"];
+  let headers = noWords ? ["Task for","Name"] : ["Task for","Name","Word"];
 
   let csv = headers.join(",") + "\n" +
     data.map(r => r.join(",")).join("\n");
@@ -208,7 +208,7 @@ function generatePDF() {
   const colWidth = usableWidth / (noWords ? 2 : 3);
 
   doc.autoTable({
-    head: [noWords ? ["Task for","Name"] : ["Task for","Name","Random Word"]],
+    head: [noWords ? ["Task for","Name"] : ["Task for","Name","Word"]],
     body: data,
     startY: margin,
     theme: "grid",
